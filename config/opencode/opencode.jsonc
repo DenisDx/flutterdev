@@ -12,13 +12,18 @@
       "npm": "@ai-sdk/openai-compatible",
       "name": "Local inference",
       "options": {
-        "baseURL": "{env:LOCAL_LLM_BASE_URL}",
-        "apiKey": "{env:LOCAL_LLM_API_KEY}"
+        "baseURL": "{env:LOCAL_LLM_BASE_URL}"
       },
       "models": {
         "local-model": {
           "id": "{env:LOCAL_LLM_MODEL}",
           "name": "Local model ({env:LOCAL_LLM_MODEL})",
+          "attachment": true,
+          "tool_call": true,
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          },
           "limit": {
             "context": 164000,
             "output": 16384

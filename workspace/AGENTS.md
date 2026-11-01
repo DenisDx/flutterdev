@@ -38,6 +38,9 @@ The container does not know host LAN addresses. Do not hardcode them.
 - `/run/flutterdev/topology.json` - generated runtime topology.
 
 Do not edit files under `/home/dev/.config/opencode`; edit them on the host.
+If a project-specific OpenCode override is needed (model options, extra MCP
+servers, permission tweaks), create or edit `/workspace/opencode.jsonc`.
+OpenCode deep-merges it over the global config at startup.
 
 ## What to start manually
 
