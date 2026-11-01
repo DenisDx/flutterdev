@@ -1,0 +1,59 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  // Модель по умолчанию: OpenAI-совместимый локальный инференс-сервер.
+  "model": "local-llm/local-model",
+  "small_model": "local-llm/local-model",
+  "autoupdate": false,
+
+  "provider": {
+    "local-llm": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Local inference",
+      "options": {
+        "baseURL": "{env:LOCAL_LLM_BASE_URL}",
+        "apiKey": "{env:LOCAL_LLM_API_KEY}"
+      },
+      "models": {
+        "local-model": {
+          "id": "{env:LOCAL_LLM_MODEL}",
+          "name": "Local model ({env:LOCAL_LLM_MODEL})",
+          "limit": {
+            "context": 164000,
+            "output": 16384
+          }
+        }
+      }
+    }
+  },
+
+  // Внешние OpenAI-совместимые и облачные провайдеры (opencode-go, deepseek)
+  // подключаются через /connect или переменные OPENCODE_GO_API_KEY /
+  // DEEPSEEK_API_KEY, переданные в контейнер Compose.
+
+  "mcp": {
+    "dart": {
+      "type": "local",
+      "command": ["dart", "mcp-server"],
+      "enabled": true
+    },
+    "searxng": {
+      "type": "remote",
+      "url": "{env:SEARXNG_MCP_URL}",
+      "enabled": true,
+      "oauth": false
+    },
+    "playwright": {
+      "type": "remote",
+      "url": "{env:PLAYWRIGHT_MCP_URL}",
+      "enabled": true,
+      "oauth": false
+    }
+  },
+
+  "permission": {
+    "edit": "allow",
+    "bash": "allow",
+    "webfetch": "allow"
+  }
+}

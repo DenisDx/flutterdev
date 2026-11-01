@@ -1,0 +1,7 @@
+[user]
+    name = Flutterdev Agent
+    email = flutterdev@localhost
+[credential]
+    helper =
+[core]
+    sshCommand = ssh -o BatchMode=yes -o StrictHostKeyChecking=yes

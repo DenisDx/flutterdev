@@ -1,0 +1,8 @@
+.git
+workspace
+state
+.env
+.env.*
+config/git/config
+tools
+*.log

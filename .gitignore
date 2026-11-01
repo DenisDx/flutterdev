@@ -1,0 +1,7 @@
+/workspace/
+/state/
+/.env
+/.env.*
+!/.env.example
+/config/git/config
+*.log
