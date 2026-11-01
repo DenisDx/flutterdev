@@ -232,6 +232,36 @@ confirmation, recreate the container with the same mounts, and verify services.
 The floating `stable`/`lts` policies update Flutter, Node.js, and OpenCode on rebuild
 even without changes to `versions.env`.
 
+### Applying `.env` changes
+
+Compose reads `.env` when it creates the container. After changing runtime values
+(addresses, ports, URLs, API keys, model names, or the AVD name), recreate the
+container without rebuilding the image:
+
+```bash
+docker compose --env-file .env --env-file versions.env up -d --force-recreate flutterdev
+```
+
+If `DOCKER_NETWORK` changed, create the new network first:
+
+```bash
+docker network create "<new-network-name>"
+```
+
+For changes that affect the image build (base image, toolchain channels, UID/GID,
+Android SDK policy, or license acceptance), run:
+
+```bash
+./scripts/update.sh
+```
+
+Verify the applied values:
+
+```bash
+docker compose exec --user dev flutterdev fd-info
+docker compose exec --user dev flutterdev check.sh
+```
+
 Rollback:
 
 ```bash
