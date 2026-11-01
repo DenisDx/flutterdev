@@ -6,12 +6,12 @@ FROM ${BASE_IMAGE}
 ARG FLUTTER_CHANNEL=stable
 ARG OPENCODE_CHANNEL=stable
 ARG NODE_CHANNEL=lts
-ARG DEV_UID=1000
-ARG DEV_GID=1000
+ARG DEV_UID
+ARG DEV_GID
 ARG ANDROID_API_LEVEL=36
 ARG ANDROID_BUILD_TOOLS=36.0.0
 ARG ANDROID_SYSTEM_IMAGE=system-images;android-36;google_apis;x86_64
-ARG ANDROID_AVD_NAME=flutterdev_api36
+ARG ANDROID_AVD_NAME
 ARG ANDROID_ACCEPT_LICENSES=false
 ARG JDK_PACKAGE=openjdk-21-jdk
 
@@ -68,8 +68,8 @@ RUN set -eux; \
         libxrandr2; \
     rm -rf /var/lib/apt/lists/*
 
-# Закомментированный блок Linux desktop toolchain.
-# Включать только при необходимости сборки Linux desktop приложений.
+# Commented-out Linux desktop toolchain block.
+# Enable only when building Linux desktop applications.
 # RUN set -eux; \
 #     apt-get update; \
 #     apt-get install -y --no-install-recommends \
@@ -119,7 +119,7 @@ RUN set -eux; \
     install -d -o root -g root -m 755 /etc/flutterdev/access; \
     install -d -o root -g root -m 755 /run/sshd
 
-# Node.js: актуальная LTS по версии из https://nodejs.org/dist/index.json.
+# Node.js: current LTS resolved from https://nodejs.org/dist/index.json.
 RUN set -eux; \
     case "$(dpkg --print-architecture)" in \
         amd64) node_arch=x64 ;; \
@@ -141,7 +141,7 @@ RUN set -eux; \
     node --version; \
     npm --version
 
-# Flutter SDK: последний выпуск выбранного канала.
+# Flutter SDK: latest release of the selected channel.
 RUN set -eux; \
     case "${FLUTTER_CHANNEL}" in \
         stable|beta|dev|main) ;; \
@@ -165,7 +165,7 @@ RUN set -eux; \
     runuser -u dev -- env HOME=/home/dev PATH=/opt/flutter/bin:/usr/local/bin:/usr/bin:/bin \
         flutter --version
 
-# JDK: JAVA_HOME определяется по фактической установке.
+# JDK: JAVA_HOME is derived from the actual installation.
 RUN set -eux; \
     java_home="$(dirname "$(dirname "$(readlink -f "$(command -v javac)")")")"; \
     test -x "${java_home}/bin/java"; \
@@ -175,7 +175,7 @@ RUN set -eux; \
 ENV JAVA_HOME=/opt/java-home
 
 # Android SDK command-line tools, platform-tools, platforms, build-tools,
-# emulator и выбранный system image.
+# emulator, and the selected system image.
 RUN set -eux; \
     if [ "${ANDROID_ACCEPT_LICENSES}" != "true" ]; then \
         echo "Android SDK licenses not accepted: set ANDROID_ACCEPT_LICENSES=true" >&2; \
@@ -217,7 +217,7 @@ RUN set -eux; \
     /opt/android-sdk/platform-tools/adb version; \
     /opt/android-sdk/emulator/emulator -version | head -1
 
-# OpenCode: последняя стабильная версия выбранного канала.
+# OpenCode: latest stable release of the selected channel.
 RUN set -eux; \
     if [ "${OPENCODE_CHANNEL}" = "stable" ]; then \
         package="opencode-ai@latest"; \
@@ -240,7 +240,8 @@ RUN printf '%s\n' \
 
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY scripts/check.sh /usr/local/bin/check.sh
-RUN chmod 0755 /usr/local/bin/entrypoint.sh /usr/local/bin/check.sh
+COPY scripts/fd-info.sh /usr/local/bin/fd-info
+RUN chmod 0755 /usr/local/bin/entrypoint.sh /usr/local/bin/check.sh /usr/local/bin/fd-info
 
 WORKDIR /workspace
 

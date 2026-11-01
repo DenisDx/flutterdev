@@ -59,6 +59,19 @@ require_var() {
     esac
 }
 
+require_secret() {
+    local name="$1"
+    local value="${!name:-}"
+    if [ -z "${value}" ]; then
+        fail "environment: ${name} is empty"
+        return
+    fi
+    case "${value}" in
+        "<"*">") fail "environment: ${name} still contains a placeholder" ;;
+        *) ok "environment: ${name}=<set>" ;;
+    esac
+}
+
 mcp_probe() {
     local url="$1"
     local body
@@ -85,6 +98,8 @@ else
     require_var PLAYWRIGHT_MCP_URL
     require_var LOCAL_LLM_BASE_URL
     require_var LOCAL_LLM_MODEL
+    require_var OPENCODE_GO_BASE_URL
+    require_secret OPENCODE_GO_API_KEY
 fi
 
 echo "== toolchain =="
@@ -103,6 +118,12 @@ check_version_cmd mc mc --version
 check_version_cmd ssh ssh -V
 check_version_cmd sshd /usr/sbin/sshd -V
 
+if command -v fd-info >/dev/null 2>&1; then
+    ok "fd-info: available"
+else
+    fail "fd-info: not found"
+fi
+
 if tmpdir="$(mktemp -d)"; then
     if python3 -m venv "${tmpdir}/venv" >/dev/null 2>&1 \
         && "${tmpdir}/venv/bin/pip" --version >/dev/null 2>&1; then
@@ -115,9 +136,9 @@ fi
 
 echo "== Android =="
 ANDROID_HOME="${ANDROID_HOME:-/opt/android-sdk}"
-API_LEVEL="${ANDROID_API_LEVEL:-36}"
-BUILD_TOOLS="${ANDROID_BUILD_TOOLS:-36.0.0}"
-SYSTEM_IMAGE="${ANDROID_SYSTEM_IMAGE:-system-images;android-36;google_apis;x86_64}"
+API_LEVEL="${ANDROID_API_LEVEL:?ANDROID_API_LEVEL is required}"
+BUILD_TOOLS="${ANDROID_BUILD_TOOLS:?ANDROID_BUILD_TOOLS is required}"
+SYSTEM_IMAGE="${ANDROID_SYSTEM_IMAGE:?ANDROID_SYSTEM_IMAGE is required}"
 SYSTEM_IMAGE_DIR="${ANDROID_HOME}/${SYSTEM_IMAGE//;/\/}"
 
 if [ -x "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" ]; then
@@ -152,7 +173,7 @@ else
         fail "/dev/kvm: not accessible"
     fi
 
-    AVD_NAME="${ANDROID_AVD_NAME:-flutterdev_api36}"
+    AVD_NAME="${ANDROID_AVD_NAME:?ANDROID_AVD_NAME is required}"
     if [ -f "/home/dev/.android/avd/${AVD_NAME}.ini" ]; then
         ok "AVD: ${AVD_NAME}"
     else
@@ -161,7 +182,7 @@ else
 
     if [ -d /home/dev ]; then
         owner="$(stat -c '%u:%g' /home/dev)"
-        expected="${DEV_UID:-1000}:${DEV_GID:-1000}"
+        expected="${DEV_UID:?DEV_UID is required}:${DEV_GID:?DEV_GID is required}"
         [ "${owner}" = "${expected}" ] \
             && ok "/home/dev ownership: ${owner}" \
             || fail "/home/dev ownership: ${owner}, expected ${expected}"
@@ -180,6 +201,19 @@ json.loads(text)
         fi
     else
         warn "OpenCode config: not mounted at /home/dev/.config/opencode/opencode.jsonc"
+    fi
+
+    if [ -r /workspace/AGENTS.md ]; then
+        ok "Agent runbook: /workspace/AGENTS.md"
+    else
+        warn "Agent runbook: /workspace/AGENTS.md is not mounted"
+    fi
+
+    if [ -r /run/flutterdev/topology.json ] \
+        && jq empty /run/flutterdev/topology.json >/dev/null 2>&1; then
+        ok "Runtime topology: /run/flutterdev/topology.json"
+    else
+        fail "Runtime topology: /run/flutterdev/topology.json is missing or invalid"
     fi
 fi
 

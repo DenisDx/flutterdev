@@ -1,4 +1,5 @@
-/workspace/
+/workspace/*
+!/workspace/AGENTS.md
 /state/
 /.env
 /.env.*

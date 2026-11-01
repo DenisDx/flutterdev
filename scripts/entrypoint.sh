@@ -8,18 +8,19 @@ die() { printf '[entrypoint] ERROR: %s\n' "$*" >&2; exit 1; }
 
 rm -rf /tmp/android-unknown
 
-DEV_UID="${DEV_UID:-1000}"
-DEV_GID="${DEV_GID:-1000}"
+DEV_UID="${DEV_UID:?DEV_UID is required}"
+DEV_GID="${DEV_GID:?DEV_GID is required}"
 SSH_ENABLED="${SSH_ENABLED:-true}"
-SSH_CONTAINER_PORT="${SSH_CONTAINER_PORT:-22}"
+SSH_CONTAINER_PORT="${SSH_CONTAINER_PORT:?SSH_CONTAINER_PORT is required}"
+WEB_CONTAINER_PORT="${WEB_CONTAINER_PORT:?WEB_CONTAINER_PORT is required}"
 SSH_KEY_DIR=/var/lib/flutterdev/ssh
 ACCESS_DIR=/etc/flutterdev/access
 AUTHORIZED_KEYS="${ACCESS_DIR}/authorized_keys"
 RUN_DIR=/run/sshd
 ANDROID_HOME="${ANDROID_HOME:-/opt/android-sdk}"
 JAVA_HOME="${JAVA_HOME:-/opt/java-home}"
-ANDROID_API_LEVEL="${ANDROID_API_LEVEL:-36}"
-ANDROID_BUILD_TOOLS="${ANDROID_BUILD_TOOLS:-36.0.0}"
+ANDROID_API_LEVEL="${ANDROID_API_LEVEL:?ANDROID_API_LEVEL is required}"
+ANDROID_BUILD_TOOLS="${ANDROID_BUILD_TOOLS:?ANDROID_BUILD_TOOLS is required}"
 
 if [ -d /home/dev ]; then
     owner="$(stat -c '%u:%g' /home/dev)"
@@ -33,6 +34,7 @@ if [ -d /workspace ]; then
     if [ "${ws_owner}" != "${DEV_UID}:${DEV_GID}" ]; then
         log "WARNING: /workspace is owned by ${ws_owner}; dev may be unable to write."
     fi
+
 fi
 
 install -d -m 0700 "${SSH_KEY_DIR}"
@@ -66,8 +68,8 @@ ensure_host_key() {
 ensure_host_key ed25519 ssh_host_ed25519_key
 ensure_host_key rsa ssh_host_rsa_key 3072
 
-AVD_NAME="${ANDROID_AVD_NAME:-flutterdev_api36}"
-SYSTEM_IMAGE="${ANDROID_SYSTEM_IMAGE:-system-images;android-36;google_apis;x86_64}"
+AVD_NAME="${ANDROID_AVD_NAME:?ANDROID_AVD_NAME is required}"
+SYSTEM_IMAGE="${ANDROID_SYSTEM_IMAGE:?ANDROID_SYSTEM_IMAGE is required}"
 SYSTEM_IMAGE_DIR="${ANDROID_HOME}/${SYSTEM_IMAGE//;/\/}"
 
 if [ "${CREATE_AVD:-true}" = "true" ] \
@@ -85,6 +87,80 @@ if [ "${CREATE_AVD:-true}" = "true" ] \
         avdmanager create avd -n "${AVD_NAME}" -k "${SYSTEM_IMAGE}" -d pixel_6 --force \
         || log "WARNING: could not create AVD ${AVD_NAME}"
 fi
+
+install -d -m 0755 /run/flutterdev
+jq -n \
+    --arg generated_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+    --arg container "flutterdev" \
+    --arg network "${DOCKER_NETWORK:-}" \
+    --arg workspace "/workspace" \
+    --arg web_internal_url "http://flutterdev:${WEB_CONTAINER_PORT}" \
+    --arg web_container_port "${WEB_CONTAINER_PORT}" \
+    --arg browser_render_url "http://flutterdev:${WEB_CONTAINER_PORT}" \
+    --arg browser_mcp_url "${PLAYWRIGHT_MCP_URL:-}" \
+    --arg searxng_mcp_url "${SEARXNG_MCP_URL:-}" \
+    --arg local_llm_base_url "${LOCAL_LLM_BASE_URL:-}" \
+    --arg local_llm_model "${LOCAL_LLM_MODEL:-}" \
+    --arg opencode_go_base_url "${OPENCODE_GO_BASE_URL:-}" \
+    --arg android_avd "${ANDROID_AVD_NAME}" \
+    --arg android_system_image "${ANDROID_SYSTEM_IMAGE}" \
+    --arg android_sdk "${ANDROID_HOME}" \
+    --arg flutter_bin "/opt/flutter/bin/flutter" \
+    --arg dart_bin "/opt/flutter/bin/dart" \
+    --arg java_home "${JAVA_HOME}" \
+    --arg opencode_config "/home/dev/.config/opencode/opencode.jsonc" \
+    --arg agents_file "/workspace/AGENTS.md" \
+    --arg ssh_container_port "${SSH_CONTAINER_PORT}" \
+    '{
+        generated_at: $generated_at,
+        container: $container,
+        network: $network,
+        workspace: $workspace,
+        web: {
+            internal_url: $web_internal_url,
+            container_port: $web_container_port
+        },
+        browser: {
+            render_url: $browser_render_url,
+            mcp_url: $browser_mcp_url
+        },
+        mcp: {
+            dart: {
+                transport: "stdio",
+                command: ["dart", "mcp-server"]
+            },
+            searxng_url: $searxng_mcp_url,
+            playwright_url: $browser_mcp_url
+        },
+        models: {
+            local: {
+                base_url: $local_llm_base_url,
+                model: $local_llm_model
+            },
+            opencode_go: {
+                base_url: $opencode_go_base_url,
+                api_key_env: "OPENCODE_GO_API_KEY"
+            }
+        },
+        android: {
+            avd: $android_avd,
+            system_image: $android_system_image,
+            sdk: $android_sdk
+        },
+        toolchain: {
+            flutter: $flutter_bin,
+            dart: $dart_bin,
+            java_home: $java_home
+        },
+        opencode: {
+            config: $opencode_config
+        },
+        agents_file: $agents_file,
+        ssh: {
+            container_port: $ssh_container_port
+        }
+    }' > /run/flutterdev/topology.json
+chmod 0644 /run/flutterdev/topology.json
 
 cat > "${RUN_DIR}/sshd_config" <<EOF
 PidFile ${RUN_DIR}/sshd.pid

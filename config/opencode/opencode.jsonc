@@ -1,7 +1,8 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "instructions": ["/workspace/AGENTS.md"],
 
-  // Модель по умолчанию: OpenAI-совместимый локальный инференс-сервер.
+  // Default model: OpenAI-compatible local inference server.
   "model": "local-llm/local-model",
   "small_model": "local-llm/local-model",
   "autoupdate": false,
@@ -24,12 +25,17 @@
           }
         }
       }
+    },
+    "opencode-go": {
+      "options": {
+        "baseURL": "{env:OPENCODE_GO_BASE_URL}",
+        "apiKey": "{env:OPENCODE_GO_API_KEY}"
+      }
     }
   },
 
-  // Внешние OpenAI-совместимые и облачные провайдеры (opencode-go, deepseek)
-  // подключаются через /connect или переменные OPENCODE_GO_API_KEY /
-  // DEEPSEEK_API_KEY, переданные в контейнер Compose.
+  // DeepSeek uses the built-in provider and the DEEPSEEK_API_KEY variable
+  // passed into the Compose container.
 
   "mcp": {
     "dart": {

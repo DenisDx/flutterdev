@@ -12,13 +12,13 @@ services:
         FLUTTER_CHANNEL: "${FLUTTER_CHANNEL:-stable}"
         OPENCODE_CHANNEL: "${OPENCODE_CHANNEL:-stable}"
         NODE_CHANNEL: "${NODE_CHANNEL:-lts}"
-        DEV_UID: "${DEV_UID:-1000}"
-        DEV_GID: "${DEV_GID:-1000}"
+        DEV_UID: "${DEV_UID}"
+        DEV_GID: "${DEV_GID}"
         ANDROID_API_LEVEL: "${ANDROID_API_LEVEL:-36}"
         ANDROID_BUILD_TOOLS: "${ANDROID_BUILD_TOOLS:-36.0.0}"
         ANDROID_SYSTEM_IMAGE: "${ANDROID_SYSTEM_IMAGE:-system-images;android-36;google_apis;x86_64}"
-        ANDROID_AVD_NAME: "${ANDROID_AVD_NAME:-flutterdev_api36}"
-        ANDROID_ACCEPT_LICENSES: "${ANDROID_ACCEPT_LICENSES:-false}"
+        ANDROID_AVD_NAME: "${ANDROID_AVD_NAME}"
+        ANDROID_ACCEPT_LICENSES: "${ANDROID_ACCEPT_LICENSES}"
         JDK_PACKAGE: "${JDK_PACKAGE:-openjdk-21-jdk}"
     init: true
     working_dir: /workspace
@@ -30,6 +30,7 @@ services:
       HOME: /home/dev
       DEV_UID: "${DEV_UID}"
       DEV_GID: "${DEV_GID}"
+      ANDROID_AVD_NAME: "${ANDROID_AVD_NAME}"
       WEB_CONTAINER_PORT: "${WEB_CONTAINER_PORT}"
       SSH_CONTAINER_PORT: "${SSH_CONTAINER_PORT}"
       SSH_ENABLED: "${SSH_ENABLED:-true}"
@@ -39,10 +40,11 @@ services:
       LOCAL_LLM_BASE_URL: "${LOCAL_LLM_BASE_URL}"
       LOCAL_LLM_MODEL: "${LOCAL_LLM_MODEL}"
       LOCAL_LLM_API_KEY: "${LOCAL_LLM_API_KEY}"
+      OPENCODE_GO_BASE_URL: "${OPENCODE_GO_BASE_URL}"
       OPENCODE_GO_API_KEY: "${OPENCODE_GO_API_KEY}"
       DEEPSEEK_API_KEY: "${DEEPSEEK_API_KEY}"
-      # Необязательно: создать config/git/config из config.example,
-      # затем включить mount и переменную одновременно.
+      # Optional: create config/git/config from config.example,
+      # then enable both the mount and the variable at the same time.
       # GIT_CONFIG_GLOBAL: /etc/flutterdev/gitconfig
     ports:
       - "${WEB_BIND_ADDRESS}:${WEB_HOST_PORT}:${WEB_CONTAINER_PORT}"
