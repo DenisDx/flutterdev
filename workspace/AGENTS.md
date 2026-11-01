@@ -96,6 +96,21 @@ adb shell uiautomator dump /sdcard/window.xml
 adb pull /sdcard/window.xml /workspace/PROJECT/window.xml
 ```
 
+There is no dedicated Android MCP. Use `adb` through the bash tool. When the
+selected model supports image input, read the screenshot with the `read` tool.
+Use `uiautomator` bounds for reliable coordinates, then interact with `adb`:
+
+```bash
+adb shell input tap X Y
+adb shell input swipe X1 Y1 X2 Y2 DURATION_MS
+adb shell input text "text"
+adb shell input keyevent KEYCODE_BACK
+```
+
+Large emulator screenshots are slow for local vision models. Prefer
+`uiautomator` for exact coordinates and take screenshots only when visual
+inspection is needed.
+
 ## MCP servers
 
 - `dart`: local stdio server, command `dart mcp-server`.
